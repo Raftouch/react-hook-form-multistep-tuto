@@ -4,6 +4,9 @@ import { useState } from 'react'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm, SubmitHandler } from 'react-hook-form'
+import { FormDataSchema } from '@/lib/schema'
+
+type FormFields = z.infer<typeof FormDataSchema>
 
 const steps = [
   {
@@ -21,15 +24,44 @@ const steps = [
 
 export default function Form() {
   const [currentStep, setCurrentStep] = useState(0)
+  const [previousStep, setPreviousStep] = useState(0)
 
-  const next = () => {
+  const {
+    register, // register fields
+    handleSubmit, // submit form
+    watch, // watch fileds
+    reset, // reset form
+    trigger, // trigger validations
+    formState: { errors },
+  } = useForm<FormFields>({
+    resolver: zodResolver(FormDataSchema),
+  })
+
+  const onSubmit: SubmitHandler<FormFields> = (data) => {
+    console.log(data)
+    reset()
+  }
+
+  type FieldName = keyof FormFields
+
+  const next = async () => {
+    const fields = steps[currentStep].fields
+    const output = await trigger(fields as FieldName[], { shouldFocus: true })
+
+    if (!output) return
+
     if (currentStep < steps.length - 1) {
+      if (currentStep === steps.length - 2) {
+        await handleSubmit(onSubmit)() // submit currentStep fields (all steps before the last one ('Thank you for submission'))
+      }
+      setPreviousStep(currentStep)
       setCurrentStep((step) => step + 1)
     }
   }
 
   const prev = () => {
     if (currentStep > 0) {
+      setPreviousStep(currentStep)
       setCurrentStep((step) => step - 1)
     }
   }
@@ -72,7 +104,7 @@ export default function Form() {
       </nav>
 
       {/* Form */}
-      <form className="mt-12 py-12">
+      <form onSubmit={handleSubmit(onSubmit)} className="mt-12 py-12">
         {currentStep === 0 && (
           <div>
             <h2 className="text-base font-semibold leading-7 text-gray-900">
@@ -93,9 +125,15 @@ export default function Form() {
                   <input
                     type="text"
                     id="firstName"
+                    {...register('firstName')}
                     autoComplete="given-name"
                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-sky-600 sm:text-sm sm:leading-6"
                   />
+                  {errors.firstName?.message && (
+                    <p className="mt-2 text-sm text-red-400">
+                      {errors.firstName.message}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -110,9 +148,15 @@ export default function Form() {
                   <input
                     type="text"
                     id="lastName"
+                    {...register('lastName')}
                     autoComplete="family-name"
                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-sky-600 sm:text-sm sm:leading-6"
                   />
+                  {errors.lastName?.message && (
+                    <p className="mt-2 text-sm text-red-400">
+                      {errors.lastName.message}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -126,10 +170,16 @@ export default function Form() {
                 <div className="mt-2">
                   <input
                     id="email"
+                    {...register('email')}
                     type="email"
                     autoComplete="email"
                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-sky-600 sm:text-sm sm:leading-6"
                   />
+                  {errors.email?.message && (
+                    <p className="mt-2 text-sm text-red-400">
+                      {errors.email.message}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -156,6 +206,7 @@ export default function Form() {
                 <div className="mt-2">
                   <select
                     id="country"
+                    {...register('country')}
                     autoComplete="country-name"
                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-sky-600 sm:max-w-xs sm:text-sm sm:leading-6"
                   >
@@ -163,6 +214,11 @@ export default function Form() {
                     <option>Canada</option>
                     <option>India</option>
                   </select>
+                  {errors.country?.message && (
+                    <p className="mt-2 text-sm text-red-400">
+                      {errors.country.message}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -177,9 +233,15 @@ export default function Form() {
                   <input
                     type="text"
                     id="street"
+                    {...register('street')}
                     autoComplete="street-address"
                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-sky-600 sm:text-sm sm:leading-6"
                   />
+                  {errors.street?.message && (
+                    <p className="mt-2 text-sm text-red-400">
+                      {errors.street.message}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -194,9 +256,15 @@ export default function Form() {
                   <input
                     type="text"
                     id="city"
+                    {...register('city')}
                     autoComplete="address-level2"
                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-sky-600 sm:text-sm sm:leading-6"
                   />
+                  {errors.city?.message && (
+                    <p className="mt-2 text-sm text-red-400">
+                      {errors.city.message}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -211,9 +279,15 @@ export default function Form() {
                   <input
                     type="text"
                     id="state"
+                    {...register('state')}
                     autoComplete="address-level1"
                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-sky-600 sm:text-sm sm:leading-6"
                   />
+                  {errors.state?.message && (
+                    <p className="mt-2 text-sm text-red-400">
+                      {errors.state.message}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -228,9 +302,15 @@ export default function Form() {
                   <input
                     type="text"
                     id="zip"
+                    {...register('zip')}
                     autoComplete="postal-code"
                     className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-sky-600 sm:text-sm sm:leading-6"
                   />
+                  {errors.zip?.message && (
+                    <p className="mt-2 text-sm text-red-400">
+                      {errors.zip.message}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
